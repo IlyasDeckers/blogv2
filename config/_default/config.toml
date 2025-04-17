@@ -1,6 +1,5 @@
 # Change baseurl before deploy
-baseurl = "https://demo.stack.jimmycai.com"
-languageCode = "en-us"
+baseurl = "https://ilyasdeckers.ody.dev"
 title = "Ilyas Deckers Blog"
 
 # Theme i18n support
@@ -15,4 +14,4 @@ hasCJKLanguage = false
 disqusShortname = "hugo-theme-stack"
 
 [pagination]
-pagerSize = 5
+pagerSize = 10

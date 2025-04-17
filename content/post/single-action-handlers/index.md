@@ -1,9 +1,8 @@
 ---
-title: PSR Standards - Single Action Handlers in PHP Frameworks
-description: Single Action Handlers in PHP Frameworks
-slug: psr-standards-single-action-handlers
+title: Single Action Handlers in PHP Frameworks
+# description: The Single Action Handler (often implemented as an Invokable Controller or specifically as a PSR-15 Request Handler) represents a shift towards more focused, decoupled, and testable code.
+slug: single-action-handlers
 date: 2025-04-14 00:00:00+0000
-image: cover.jpg
 categories:
     - PHP
 tags:
@@ -25,22 +24,43 @@ Instead, a **Single Action Handler is a class dedicated exclusively to processin
 1.  Implementing PHP's magic `__invoke()` method, allowing the class instance to be treated as the action itself.
 2.  Implementing the `Psr\Http\Server\RequestHandlerInterface`, which defines a `handle(ServerRequestInterface $request): ResponseInterface` method – the standard defined by PSR-15.
 
-This README explores this pattern, its benefits, the crucial role of PSR standards, and how it can be implemented effectively (and with varying degrees of native support) in popular PHP frameworks like Mezzio, Symfony, and Laravel.
+This article explores this pattern, its benefits, the crucial role of PSR standards, and how it can be implemented effectively (and with varying degrees of native support) in popular PHP frameworks like Mezzio, Symfony, and Laravel.
 
-**Example Contrast:**
+**Example:**
 
 * **Traditional Multi-Action Controller:**
     ```php
     // UserController.php
-    class UserController { /* Handles multiple user-related routes */ }
-    // routes.php: Route::get('/users/{id}', [UserController::class, 'show']);
+    class UserController {
+        public function show(int $id) { /* ... */ }
+        public function store(Request $request) { /* ... */ }
+        // ... other methods ...
+    }
+  
+    // routes.php
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::post('/users', [UserController::class, 'store']);
     ```
 
 * **Single Action Handler Pattern (Conceptual):**
     ```php
-    // ShowUserHandler.php (PSR-15) or ShowUserAction.php (__invoke)
-    class ShowUserHandler implements RequestHandlerInterface { /* Logic only for showing a user */ }
-    // routes.php: Route::get('/users/{id}', ShowUserHandler::class); // Route directly to the handler
+    // ShowUserAction.php (or ShowUserController.php)
+    class ShowUserAction {
+        public function __invoke(int $id) { 
+            /* Logic for showing a user */
+        }
+    }
+  
+    // StoreUserAction.php (or StoreUserController.php)
+    class StoreUserAction {
+        public function __invoke(Request $request) { 
+            /* Logic for storing a user */ 
+        }
+    }
+  
+    // routes.php
+    Route::get('/users/{id}', ShowUserAction::class);
+    Route::post('/users', StoreUserAction::class);
     ```
 
 ## Why Use This Pattern? The Rationale
@@ -54,7 +74,7 @@ Adopting the single action handler pattern brings significant advantages:
 5.  **Precise Dependency Management:** Only dependencies needed for that *specific action* are injected, leading to cleaner constructors and more efficient resource usage.
 6.  **Reduced Cognitive Load:** Developers can focus entirely on the task of a single endpoint without the mental overhead of unrelated actions in the same file.
 
-## The Importance of PSR Standards
+## The Importance of PSR Standards For single Action Handles
 
 Understanding PSR (PHP Standard Recommendations) is crucial for appreciating the full benefits of modern PHP development and patterns like PSR-15 Request Handlers. PSRs are specifications published by the PHP Framework Interop Group (PHP-FIG), comprised of members from various major PHP projects. Their goal is to promote **interoperability** and **standardization** across the PHP ecosystem.
 
@@ -89,7 +109,49 @@ Frameworks vary in their native support for PSR-15 handlers.
 Frameworks like Mezzio (formerly Zend Expressive) are built *from the ground up* around PSR-7 and PSR-15. Using single-action `RequestHandlerInterface` implementations is the standard, idiomatic way.
 
 * **Core Concept:** Requests flow through a PSR-15 middleware pipeline, ending at a route-specific `RequestHandlerInterface`.
-* **Example Implementation:** (See previous README example - it's the native approach)
+* **Example Implementation (Mezzio):**
+    ```php
+    <?php
+    // src/App/Handler/GetUserHandler.php
+    declare(strict_types=1);
+
+    namespace App\Handler;
+
+    use App\Repository\UserRepositoryInterface;
+    use Laminas\Diactoros\Response\JsonResponse;
+    use Psr\Http\Message\ResponseInterface;
+    use Psr\Http\Message\ServerRequestInterface;
+    use Psr\Http\Server\RequestHandlerInterface;
+
+    class GetUserHandler implements RequestHandlerInterface
+    {
+        private UserRepositoryInterface $userRepository;
+
+        public function __construct(UserRepositoryInterface $userRepository)
+        {
+            $this->userRepository = $userRepository;
+        }
+
+        public function handle(ServerRequestInterface $request): ResponseInterface
+        {
+            // Get route parameter (assuming router middleware added it as attribute)
+            $userId = (int) $request->getAttribute('id');
+
+            $user = $this->userRepository->findById($userId);
+
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], 404);
+            }
+
+            // Assuming User object has a suitable method for array conversion
+            return new JsonResponse($user->toArray());
+        }
+    }
+    ```
+  *Routing (e.g., in `config/routes.php`)*
+    ```php
+    $app->get('/api/users/{id:\d+}', App\Handler\GetUserHandler::class, 'api.user.get');
+    ```
 * **Pros (Mezzio/PSR-15 Native):**
     * **Pure PSR Adherence:** Natively uses PSR-7/15, maximizing interoperability and benefits of the standards. No bridging needed for core HTTP handling.
     * **Minimalism & Performance:** Very lean core, potentially high performance.
@@ -97,6 +159,7 @@ Frameworks like Mezzio (formerly Zend Expressive) are built *from the ground up*
 * **Cons (Mezzio/PSR-15 Native):**
     * **More Initial Setup:** Requires assembling the application stack (router, container, ORM, etc.).
     * **Smaller Framework-Specific Ecosystem:** Fewer Mezzio-specific bundles compared to Symfony/Laravel (though any standard PHP/PSR package works).
+
 
 ### 2. Symfony: Achieving PSR-15 Compliance
 
@@ -106,6 +169,52 @@ Symfony is highly flexible and *can* work cleanly with PSR-15 handlers, though i
     * **Concept:** Create a standard Symfony controller (`__invoke`) that acts as a bridge. It receives the `HttpFoundation\Request`, converts it to PSR-7 `ServerRequestInterface` (using `symfony/psr-http-message-bridge`), calls your actual `RequestHandlerInterface`, converts the PSR-7 `ResponseInterface` back to `HttpFoundation\Response`, and returns it.
     * **Pros:** Explicit, relatively easy to understand for a single handler.
     * **Cons:** **Significant boilerplate** - requires one adapter class per PSR-15 handler. Feels cumbersome.
+    * **Example:**
+```php
+<?php
+
+namespace App\Controller\Api\Orders;
+
+use App\Handler\ProcessOrderHandler;
+use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
+use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
+use Symfony\Component\HttpFoundation\Request; // Symfony Request
+use Symfony\Component\HttpFoundation\Response; // Symfony Response
+use Symfony\Component\Routing\Annotation\Route;
+
+class ProcessOrderAdapterAction
+{
+    private HttpMessageFactoryInterface $psrHttpFactory;
+    private HttpFoundationFactoryInterface $httpFoundationFactory;
+    private ProcessOrderHandler $handler;
+
+    public function __construct(
+        HttpMessageFactoryInterface $psrHttpFactory,
+        HttpFoundationFactoryInterface $httpFoundationFactory,
+        ProcessOrderHandler $handler // Autowired by Symfony DI
+    ) {
+        $this->psrHttpFactory = $psrHttpFactory;
+        $this->httpFoundationFactory = $httpFoundationFactory;
+        $this->handler = $handler;
+    }
+
+    #[Route('/api/orders', name: 'api_order_process', methods: ['POST'])]
+    public function __invoke(Request $request): Response
+    {
+        // 1. Convert Symfony Request -> PSR-7 Request
+        $psrRequest = $this->psrHttpFactory->createRequest($request);
+
+        // 2. Call the actual PSR-15 Handler
+        $psrResponse = $this->handler->handle($psrRequest);
+
+        // 3. Convert PSR-7 Response -> Symfony Response
+        $response = $this->httpFoundationFactory->createResponse($psrResponse);
+
+        // 4. Return Symfony Response
+        return $response;
+    }
+}
+  ```
 
 * **Option 2: Centralized Listener (The Cleaner Approach)**
     * **Concept:** Leverage Symfony's Kernel Events. Create an Event Listener for the `kernel.controller` event. This listener checks if the controller resolved by the router implements `RequestHandlerInterface`. If it does, the listener takes over: it uses the PSR-7 bridge to convert the request, executes the handler's `handle` method, converts the response back, and sets it directly on the event (`$event->setResponse()`), bypassing Symfony's standard controller execution.
@@ -135,6 +244,57 @@ Laravel prioritizes developer experience and convention. While it uses HttpFound
     * **Concept:** Similar to Symfony's adapter - create an invokable Laravel controller (`__invoke`) that uses the PSR-7 bridge (included via dependencies) to convert the `Illuminate\Http\Request`, call the PSR-15 handler, and convert the PSR-7 response back to a Laravel-compatible response. Requires PSR-7 implementation like Nyholm and manual factory setup.
     * **Pros:** Explicit.
     * **Cons:** **Significant boilerplate** per handler. Feels unnatural in the Laravel ecosystem.
+    * **Example:**
+
+```php
+<?php
+namespace App\Http\Controllers\Api\Order;
+
+use App\Handler\ProcessOrderHandler;
+use Illuminate\Http\Request;
+use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
+use Psr\Http\Message\ServerRequestInterface as PsrServerRequestInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
+// Use appropriate factories - Laravel includes the bridge, but you might need to wire factories
+// Usually requires Nyholm PSR-7 implementation `composer require nyholm/psr7`
+// and `composer require symfony/psr-http-message-bridge`
+
+class ProcessOrderAdapterController
+{
+    private ProcessOrderHandler $handler;
+    private PsrHttpFactory $psrHttpFactory;
+    private HttpFoundationFactory $httpFoundationFactory;
+
+    public function __construct(ProcessOrderHandler $handler) {
+        $this->handler = $handler;
+
+        // Manually create factories or inject them if configured in service container
+        // Requires PSR-7 implementation (like Nyholm) to be available
+        $psr17Factory = new \Nyholm\Psr7\Factory\Psr17Factory();
+        $this->psrHttpFactory = new PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory);
+        $this->httpFoundationFactory = new HttpFoundationFactory();
+    }
+
+    /**
+     * Handle the incoming request.
+     */
+    public function __invoke(Request $request) // Receives Laravel Request
+    {
+        // 1. Convert Laravel Request -> PSR-7 Request
+        $psrRequest = $this->psrHttpFactory->createRequest($request);
+
+        // 2. Call the actual PSR-15 Handler
+        $psrResponse = $this->handler->handle($psrRequest);
+
+        // 3. Convert PSR-7 Response -> Symfony/Laravel Response
+        $response = $this->httpFoundationFactory->createResponse($psrResponse);
+
+        // 4. Return Laravel compatible Response
+        return $response;
+    }
+}
+```
 
 * **Option 2: Centralized Middleware (The Cleaner Approach)**
     * **Concept:** Create a custom Laravel Middleware. This middleware checks if the controller class resolved by the router for the current route implements `RequestHandlerInterface`. If it does, the middleware takes over: it instantiates the handler (via container), performs the Request/Response bridging using PSR-7 factories, executes the handler's `handle` method, and returns the converted response directly, bypassing Laravel's standard controller dispatch (`$next($request)` is skipped).
@@ -152,7 +312,48 @@ Laravel prioritizes developer experience and convention. While it uses HttpFound
         7.  Route directly to the FQCN of your PSR-15 handler class.
     * **Pros:** **Eliminates adapter boilerplate.** Centralizes bridging logic. Allows routing directly to PSR-15 handlers.
     * **Cons:** Middleware becomes complex and critical. Requires careful handling of route information and potential pipeline order issues. Setting up PSR-7 factories might need a Service Provider. Works slightly "against the grain" of Laravel's typical controller flow.
+    * **Example:**
+```php
+public function handle(Request $request, Closure $next)
+{
+    $route = $request->route();
+    $controllerAction = $route->getActionName(); // Might be 'ClassName' or 'ClassName@method'
 
+    // Need a reliable way to get the target class name.
+    // $controllerAction could be 'App\Handler\MyPsr15Handler' if routed directly to class
+    // Or sometimes it might be complex, need robust parsing if method is involved.
+    // Let's assume direct class routing:
+    $controllerClass = is_string($controllerAction) && class_exists($controllerAction) ? $controllerAction : null;
+
+    // Check if the resolved class exists and implements the interface
+    if ($controllerClass && (new \ReflectionClass($controllerClass))->implementsInterface(\Psr\Http\Server\RequestHandlerInterface::class)) {
+
+        // Instantiate the handler via the container to resolve dependencies
+        $psr15Handler = app()->make($controllerClass);
+
+        // Get bridge factories (configure in a Service Provider or create manually)
+        // Requires PSR-7 Implementation (e.g., composer require nyholm/psr7)
+        $psr17Factory = new \Nyholm\Psr7\Factory\Psr17Factory();
+        $psrHttpFactory = new \Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory);
+        $httpFoundationFactory = new \Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory();
+
+        // Convert Laravel Request -> PSR-7 Request
+        $psrRequest = $psrHttpFactory->createRequest($request);
+
+        // Execute the PSR-15 Handler
+        $psrResponse = $psr15Handler->handle($psrRequest);
+
+        // Convert PSR-7 Response -> Laravel Response
+        $response = $httpFoundationFactory->createResponse($psrResponse);
+
+        // Return the response *directly*, bypassing $next() and standard controller dispatch
+        return $response;
+    }
+
+    // If not a PSR-15 handler route, proceed normally
+    return $next($request);
+}
+```
 * **Overall Laravel & PSR:** Laravel *can* be made to work with PSR-15 handlers via middleware, significantly cleaning up the adapter approach. However, compared to Symfony's kernel events or Mezzio's native support, it feels less integrated. Laravel's strength lies in its opinionated, rapid development workflow using its native components (Eloquent, Blade, Facades). Pushing for strict PSR-15 handler compliance requires bypassing some of that core flow.
 
 ## General Pros and Cons of the Single Action Handler Pattern (Summary)

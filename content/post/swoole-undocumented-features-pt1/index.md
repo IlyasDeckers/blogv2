@@ -2,7 +2,7 @@
 title: Swoole undocumented features pt.1
 description: 
 slug: swoole-undocumented-features-pt1
-date: 2025-04-01 00:00:00+0000
+date: 2024-06-21 00:00:00+0000
 # image: cover.jpg
 categories:
     - Swoole
