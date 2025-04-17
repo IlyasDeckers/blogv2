@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Types on Ilyas Deckers Blog</title><link>https://ilyasdeckers.ody.dev/tags/types/</link><description>Recent content in Types on Ilyas Deckers Blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sun, 13 Apr 2025 00:01:00 +0000</lastBuildDate><atom:link href="https://ilyasdeckers.ody.dev/tags/types/index.xml" rel="self" type="application/rss+xml"/><item><title>PHP + Static Analysis vs. Native Statically Typed Languages</title><link>https://ilyasdeckers.ody.dev/p/php-static-analysis-vs-native-statically-typed-languages/</link><pubDate>Sun, 13 Apr 2025 00:01:00 +0000</pubDate><guid>https://ilyasdeckers.ody.dev/p/php-static-analysis-vs-native-statically-typed-languages/</guid><description>&lt;h2 id="introduction">Introduction
+&lt;/h2>&lt;p>Modern software development increasingly emphasizes code robustness, maintainability, and catching errors early. Type safety plays a crucial role in achieving these goals. Teams often face a choice: migrate to a language with built-in static typing or enhance their existing dynamically typed language (like PHP) with powerful static analysis tools.&lt;/p>
+&lt;p>This document compares these two approaches:&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>Native Statically Typed Languages:&lt;/strong> Languages where type checking is a fundamental, mandatory part of the compiler (e.g., Go, C#, Rust, Scala, Java, TypeScript*).&lt;/li>
+&lt;li>&lt;strong>PHP + Static Analysis Tools:&lt;/strong> Using PHP (which is dynamically typed at its core) augmented with tools like PHPStan or Psalm to perform type checking before runtime.&lt;/li>
+&lt;/ol>
+&lt;p>&lt;em>(*Note: TypeScript compiles to JavaScript but provides static typing during development and compilation).&lt;/em>&lt;/p>
+&lt;h2 id="approach-1-native-statically-typed-languages">Approach 1: Native Statically Typed Languages
+&lt;/h2>&lt;h3 id="definition">Definition
+&lt;/h3>&lt;p>These languages require type information to be known at compile time. The compiler rigorously checks type compatibility throughout the codebase before producing an executable or intermediate code.&lt;/p>
+&lt;p>&lt;em>(Examples: Go, C#, Rust, Scala, Java)&lt;/em>&lt;/p>
+&lt;h3 id="mechanism">Mechanism
+&lt;/h3>&lt;ul>
+&lt;li>Type checking is &lt;strong>inherent to the language and compiler&lt;/strong>.&lt;/li>
+&lt;li>It&amp;rsquo;s a &lt;strong>mandatory step&lt;/strong> to produce a runnable program.&lt;/li>
+&lt;li>Errors found by the compiler &lt;strong>prevent compilation&lt;/strong> altogether.&lt;/li>
+&lt;/ul>
+&lt;h3 id="pros">Pros
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>Strong Compile-Time Guarantees:&lt;/strong> Catches a wide range of type errors, null pointer issues (depending on language features like null safety), and API contract violations &lt;em>before&lt;/em> the code can even run.&lt;/li>
+&lt;li>&lt;strong>High Runtime Safety:&lt;/strong> The compiled code benefits from the guarantees established at compile time, leading to fewer unexpected runtime type errors.&lt;/li>
+&lt;li>&lt;strong>Excellent Refactoring Safety:&lt;/strong> The compiler immediately flags issues arising from code changes (e.g., changing a function signature).&lt;/li>
+&lt;li>&lt;strong>Performance Potential:&lt;/strong> Type information allows compilers to perform significant optimizations (Ahead-of-Time compilation), often leading to better runtime performance compared to interpreted languages.&lt;/li>
+&lt;li>&lt;strong>Clear Contracts:&lt;/strong> Types serve as enforced documentation, making interfaces and data structures explicit.&lt;/li>
+&lt;li>&lt;strong>Rich Native Type Systems:&lt;/strong> Often include advanced features like generics, interfaces, traits, enums, etc., as core language constructs.&lt;/li>
+&lt;li>&lt;strong>Mature Tooling &amp;amp; IDE Support:&lt;/strong> Excellent code completion, error highlighting, and refactoring tools based directly on the language&amp;rsquo;s type system.&lt;/li>
+&lt;/ul>
+&lt;h3 id="cons">Cons
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>Steeper Learning Curve:&lt;/strong> Requires learning a new language syntax, standard library, ecosystem, build tools, and potentially different programming paradigms (e.g., Go&amp;rsquo;s concurrency, Rust&amp;rsquo;s ownership).&lt;/li>
+&lt;li>&lt;strong>Migration Effort:&lt;/strong> Moving an existing PHP codebase requires a significant rewrite.&lt;/li>
+&lt;li>&lt;strong>Initial Strictness:&lt;/strong> Can feel less flexible or more verbose initially compared to dynamic languages.&lt;/li>
+&lt;li>&lt;strong>Compilation Time:&lt;/strong> Can be a factor in development cycles for very large projects (though often offset by finding errors earlier).&lt;/li>
+&lt;/ul>
+&lt;h2 id="approach-2-php--static-analysis-tools">Approach 2: PHP + Static Analysis Tools
+&lt;/h2>&lt;h3 id="definition-1">Definition
+&lt;/h3>&lt;p>This involves writing standard PHP code, leveraging its native type hinting features (scalar types, return types, property types, union types, etc.), and potentially adding detailed PHPDoc annotations. External tools then analyze this code &lt;em>without running it&lt;/em>.&lt;/p>
+&lt;p>&lt;em>(Examples: PHP with PHPStan or Psalm)&lt;/em>&lt;/p>
+&lt;h3 id="mechanism-1">Mechanism
+&lt;/h3>&lt;ul>
+&lt;li>Type checking is performed by an &lt;strong>external tool&lt;/strong>, separate from the PHP interpreter itself.&lt;/li>
+&lt;li>It analyzes code based on native type hints (&lt;code>int&lt;/code>, &lt;code>string&lt;/code>, &lt;code>?User&lt;/code>, &lt;code>int|string&lt;/code>) and detailed PHPDoc annotations (&lt;code>@var&lt;/code>, &lt;code>@param&lt;/code>, &lt;code>@return&lt;/code>, &lt;code>@template&lt;/code>, &lt;code>array{...}&lt;/code>).&lt;/li>
+&lt;li>Analysis is typically run manually, via commit hooks, or in a CI/CD pipeline. It &lt;strong>does not prevent&lt;/strong> PHP from &lt;em>attempting&lt;/em> to run code with type errors if the analysis step is skipped.&lt;/li>
+&lt;/ul>
+&lt;h3 id="pros-1">Pros
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>Familiar Ecosystem:&lt;/strong> Allows teams to stay within the PHP language, leveraging existing knowledge, frameworks (Laravel, Symfony, etc.), libraries, and infrastructure.&lt;/li>
+&lt;li>&lt;strong>Lower Initial Learning Curve:&lt;/strong> Focuses on learning the static analysis tool and writing better-typed PHP, rather than an entirely new language.&lt;/li>
+&lt;li>&lt;strong>Gradual Adoption:&lt;/strong> Tools like PHPStan/Psalm have configurable levels and baseline features, allowing teams to introduce type checking incrementally, focusing on new code first if needed.&lt;/li>
+&lt;li>&lt;strong>Catches Most Type Errors:&lt;/strong> When configured well and used diligently, these tools catch a vast majority of type-related errors, nullability issues, and other potential bugs before runtime.&lt;/li>
+&lt;li>&lt;strong>Improved Code Quality:&lt;/strong> Significantly enhances PHP code&amp;rsquo;s readability, maintainability, and reliability.&lt;/li>
+&lt;li>&lt;strong>Safer Refactoring within PHP:&lt;/strong> Provides much greater confidence when making changes to existing PHP code.&lt;/li>
+&lt;li>&lt;strong>Excellent IDE Integration:&lt;/strong> Plugins provide real-time feedback directly in the editor (VS Code, PhpStorm).&lt;/li>
+&lt;/ul>
+&lt;h3 id="cons-1">Cons
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>No Runtime Guarantee:&lt;/strong> PHP&amp;rsquo;s core execution model remains dynamically typed. If the static analysis step is skipped, incomplete, or if external dependencies violate contracts in unexpected ways, &lt;strong>runtime type errors are still possible&lt;/strong>. The guarantee comes from the &lt;em>process&lt;/em> of using the tool, not the language runtime itself.&lt;/li>
+&lt;li>&lt;strong>Dependency on Tooling &amp;amp; Annotations:&lt;/strong> The effectiveness relies heavily on the quality of type hints, the thoroughness of PHPDoc annotations (especially for generics or complex array shapes), and the configuration level of the analysis tool.&lt;/li>
+&lt;li>&lt;strong>Potential Verbosity (PHPDoc):&lt;/strong> Complex type scenarios might require verbose PHPDoc blocks where native PHP types are insufficient. (PHP continues to improve its native type system, reducing this over time).&lt;/li>
+&lt;li>&lt;strong>Analysis Time:&lt;/strong> Can add time to CI builds or pre-commit checks for large projects.&lt;/li>
+&lt;li>&lt;strong>No Inherent Performance Gain:&lt;/strong> Does not fundamentally change PHP&amp;rsquo;s runtime performance characteristics (unlike compilation in many static languages).&lt;/li>
+&lt;/ul>
+&lt;h2 id="key-differences-summarized">Key Differences Summarized
+&lt;/h2>&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th style="text-align: left">Feature&lt;/th>
+&lt;th style="text-align: left">Native Static Language (Go, C#, Rust&amp;hellip;)&lt;/th>
+&lt;th style="text-align: left">PHP + Static Analysis (PHPStan/Psalm)&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Core Nature&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Statically Typed&lt;/td>
+&lt;td style="text-align: left">Dynamically Typed (at runtime)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Enforcement By&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Compiler (Built-in, Mandatory)&lt;/td>
+&lt;td style="text-align: left">External Tool (Process-driven)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Error Detection&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Compile-Time&lt;/td>
+&lt;td style="text-align: left">Analysis-Time (Pre-Runtime)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Runtime Safety&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Very High (Language Guarantee)&lt;/td>
+&lt;td style="text-align: left">High (If analysis is run &amp;amp; complete)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Type System Used&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Native Language Features&lt;/td>
+&lt;td style="text-align: left">Native PHP Types + PHPDoc Annotations&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Performance&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Often Higher (AOT Optimizations)&lt;/td>
+&lt;td style="text-align: left">Standard PHP Performance&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Learning Curve&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Higher (New Language/Ecosystem)&lt;/td>
+&lt;td style="text-align: left">Lower (Enhance Existing Skills)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Adoption Scope&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Full Language Switch&lt;/td>
+&lt;td style="text-align: left">Incremental / Gradual Possible&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: left">&lt;strong>Flexibility&lt;/strong>&lt;/td>
+&lt;td style="text-align: left">Lower (Compiler Strictness)&lt;/td>
+&lt;td style="text-align: left">Higher (PHP Core Dynamism)&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h2 id="when-to-choose-which-approach">When to Choose Which Approach?
+&lt;/h2>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>Choose Native Static Languages if:&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>Performance, concurrency, or compile-time memory safety are top priorities.&lt;/li>
+&lt;li>Starting a new project where the team is willing and able to learn a new ecosystem.&lt;/li>
+&lt;li>The specific strengths of a language align well with the project domain (e.g., systems work for Rust, high-concurrency services for Go, large enterprise apps for C#/Java).&lt;/li>
+&lt;li>You require the strongest possible &lt;em>runtime&lt;/em> guarantees enforced by the language itself.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Choose PHP + Static Analysis if:&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>You need to improve the quality and maintainability of an existing PHP codebase.&lt;/li>
+&lt;li>Your team wants to remain within the PHP ecosystem (frameworks, libraries, developer skills).&lt;/li>
+&lt;li>A lower initial learning curve and gradual adoption are preferred.&lt;/li>
+&lt;li>You value PHP&amp;rsquo;s flexibility and rapid development cycle but want significantly increased safety.&lt;/li>
+&lt;li>You accept that the ultimate runtime safety relies on the &lt;em>process&lt;/em> of using the tools correctly, rather than being inherent in the PHP runtime itself.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="conclusion">Conclusion
+&lt;/h2>&lt;p>Both approaches offer significant advantages over traditional, untyped dynamic language development. Native statically typed languages provide the strongest compile-time and runtime guarantees at the cost of a higher learning curve and migration effort. Enhancing PHP with powerful static analysis tools like PHPStan or Psalm offers a pragmatic path to achieving vastly improved type safety, code quality, and maintainability while leveraging existing skills and ecosystems, making it an excellent choice for many PHP teams.&lt;/p></description></item></channel></rss>

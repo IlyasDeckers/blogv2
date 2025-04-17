@@ -1,0 +1,411 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Introduction: What is the Single Action Handler Pattern? In modern PHP web development, the Single Action Handler (often implemented as an Invokable Controller or specifically as a PSR-15 Request Handler) represents a shift towards more focused, decoupled, and testable code, especially for APIs and specific web actions.\nThis pattern moves away from traditional Model-View-Controller (MVC) structures where a single Controller class might handle numerous related routes via multiple methods (e.g., UserController with index(), show(), store(), etc.).\n"><title>Single Action Handlers in PHP Frameworks</title>
+<link rel=canonical href=https://ilyasdeckers.ody.dev/p/single-action-handlers/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="Single Action Handlers in PHP Frameworks"><meta property='og:description' content="Introduction: What is the Single Action Handler Pattern? In modern PHP web development, the Single Action Handler (often implemented as an Invokable Controller or specifically as a PSR-15 Request Handler) represents a shift towards more focused, decoupled, and testable code, especially for APIs and specific web actions.\nThis pattern moves away from traditional Model-View-Controller (MVC) structures where a single Controller class might handle numerous related routes via multiple methods (e.g., UserController with index(), show(), store(), etc.).\n"><meta property='og:url' content='https://ilyasdeckers.ody.dev/p/single-action-handlers/'><meta property='og:site_name' content='Ilyas Deckers Blog'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='PHP'><meta property='article:tag' content='PSR'><meta property='article:tag' content='Laravel'><meta property='article:tag' content='Symfony'><meta property='article:tag' content='Mezzio'><meta property='article:published_time' content='2025-04-14T00:00:00+00:00'><meta property='article:modified_time' content='2025-04-14T00:00:00+00:00'><meta name=twitter:title content="Single Action Handlers in PHP Frameworks"><meta name=twitter:description content="Introduction: What is the Single Action Handler Pattern? In modern PHP web development, the Single Action Handler (often implemented as an Invokable Controller or specifically as a PSR-15 Request Handler) represents a shift towards more focused, decoupled, and testable code, especially for APIs and specific web actions.\nThis pattern moves away from traditional Model-View-Controller (MVC) structures where a single Controller class might handle numerous related routes via multiple methods (e.g., UserController with index(), show(), store(), etc.).\n"><link rel="shortcut icon" href=/favicon.png></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_a04bd0a3db431516.jpeg width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🍥</span></figure><div class=site-meta><h1 class=site-name><a href=/>Ilyas Deckers Blog</a></h1><h2 class=site-description>Software engineer - PHP, Swoole, Docker, MySQL, Azure, Redis, Devops, RabbitMQ, GoLang and a bit of Rust.</h2></div></header><ol class=menu-social><li><a href=https://bsky.app/profile/ilyasdeckers.bsky.social target=_blank title=Bluesky rel=me><svg class="icon icon-tabler icon-tabler-brand-twitter" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84.0 00.497-3.753C20.18 7.773 21.692 5.25 22 4.009z"/></svg></a></li><li><a href=https://github.com/IlyasDeckers target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#introduction-what-is-the-single-action-handler-pattern>Introduction: What is the Single Action Handler Pattern?</a></li><li><a href=#why-use-this-pattern-the-rationale>Why Use This Pattern? The Rationale</a></li><li><a href=#the-importance-of-psr-standards-for-single-action-handles>The Importance of PSR Standards For single Action Handles</a></li><li><a href=#implementation-across-frameworks>Implementation Across Frameworks</a><ol><li><a href=#1-middleware-frameworks-psr-15-native---mezzio-example>1. Middleware Frameworks (PSR-15 Native - Mezzio Example)</a></li><li><a href=#2-symfony-achieving-psr-15-compliance>2. Symfony: Achieving PSR-15 Compliance</a></li><li><a href=#3-laravel-achieving-psr-15-compliance>3. Laravel: Achieving PSR-15 Compliance</a></li></ol></li><li><a href=#general-pros-and-cons-of-the-single-action-handler-pattern-summary>General Pros and Cons of the Single Action Handler Pattern (Summary)</a></li><li><a href=#when-to-use-this-pattern>When to Use This Pattern</a></li><li><a href=#conclusion--framework-choice-considerations>Conclusion & Framework Choice Considerations</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/php/>PHP</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/single-action-handlers/>Single Action Handlers in PHP Frameworks</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Apr 14, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>14 minute read</time></div></footer></div></header><section class=article-content><h2 id=introduction-what-is-the-single-action-handler-pattern>Introduction: What is the Single Action Handler Pattern?</h2><p>In modern PHP web development, the <strong>Single Action Handler</strong> (often implemented as an <strong>Invokable Controller</strong> or specifically as a <strong>PSR-15 Request Handler</strong>) represents a shift towards more focused, decoupled, and testable code, especially for APIs and specific web actions.</p><p>This pattern moves away from traditional Model-View-Controller (MVC) structures where a single Controller class might handle numerous related routes via multiple methods (e.g., <code>UserController</code> with <code>index()</code>, <code>show()</code>, <code>store()</code>, etc.).</p><p>Instead, a <strong>Single Action Handler is a class dedicated exclusively to processing the logic for one specific route or endpoint.</strong> It achieves this typically through:</p><ol><li>Implementing PHP&rsquo;s magic <code>__invoke()</code> method, allowing the class instance to be treated as the action itself.</li><li>Implementing the <code>Psr\Http\Server\RequestHandlerInterface</code>, which defines a <code>handle(ServerRequestInterface $request): ResponseInterface</code> method – the standard defined by PSR-15.</li></ol><p>This article explores this pattern, its benefits, the crucial role of PSR standards, and how it can be implemented effectively (and with varying degrees of native support) in popular PHP frameworks like Mezzio, Symfony, and Laravel.</p><p><strong>Example:</strong></p><ul><li><p><strong>Traditional Multi-Action Controller:</strong></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=c1>// UserController.php
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>class</span> <span class=nc>UserController</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=nf>show</span><span class=p>(</span><span class=nx>int</span> <span class=nv>$id</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* ... */</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=nf>store</span><span class=p>(</span><span class=nx>Request</span> <span class=nv>$request</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* ... */</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// ... other methods ...
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// routes.php
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>Route</span><span class=o>::</span><span class=na>get</span><span class=p>(</span><span class=s1>&#39;/users/{id}&#39;</span><span class=p>,</span> <span class=p>[</span><span class=nx>UserController</span><span class=o>::</span><span class=na>class</span><span class=p>,</span> <span class=s1>&#39;show&#39;</span><span class=p>]);</span>
+</span></span><span class=line><span class=cl><span class=nx>Route</span><span class=o>::</span><span class=na>post</span><span class=p>(</span><span class=s1>&#39;/users&#39;</span><span class=p>,</span> <span class=p>[</span><span class=nx>UserController</span><span class=o>::</span><span class=na>class</span><span class=p>,</span> <span class=s1>&#39;store&#39;</span><span class=p>]);</span>
+</span></span></code></pre></td></tr></table></div></div></li><li><p><strong>Single Action Handler Pattern (Conceptual):</strong></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=c1>// ShowUserAction.php (or ShowUserController.php)
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>class</span> <span class=nc>ShowUserAction</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__invoke</span><span class=p>(</span><span class=nx>int</span> <span class=nv>$id</span><span class=p>)</span> <span class=p>{</span> 
+</span></span><span class=line><span class=cl>        <span class=cm>/* Logic for showing a user */</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// StoreUserAction.php (or StoreUserController.php)
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>class</span> <span class=nc>StoreUserAction</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__invoke</span><span class=p>(</span><span class=nx>Request</span> <span class=nv>$request</span><span class=p>)</span> <span class=p>{</span> 
+</span></span><span class=line><span class=cl>        <span class=cm>/* Logic for storing a user */</span> 
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// routes.php
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=nx>Route</span><span class=o>::</span><span class=na>get</span><span class=p>(</span><span class=s1>&#39;/users/{id}&#39;</span><span class=p>,</span> <span class=nx>ShowUserAction</span><span class=o>::</span><span class=na>class</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=nx>Route</span><span class=o>::</span><span class=na>post</span><span class=p>(</span><span class=s1>&#39;/users&#39;</span><span class=p>,</span> <span class=nx>StoreUserAction</span><span class=o>::</span><span class=na>class</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div></li></ul><h2 id=why-use-this-pattern-the-rationale>Why Use This Pattern? The Rationale</h2><p>Adopting the single action handler pattern brings significant advantages:</p><ol><li><strong>Single Responsibility Principle (SRP):</strong> Each class does exactly one thing. This drastically improves clarity, making code easier to understand, modify safely, and debug.</li><li><strong>Enhanced Testability:</strong> Unit testing becomes much simpler. Smaller classes have fewer dependencies to mock, and the scope of each test is clearly defined.</li><li><strong>Improved Organization:</strong> Prevents &ldquo;fat controllers.&rdquo; Code can be neatly organized by feature or domain slice, leading to a more maintainable structure, especially in large applications.</li><li><strong>Increased Readability:</strong> The class name itself often describes the action (e.g., <code>ProcessPaymentHandler</code>, <code>GetUserApiEndpoint</code>). The single <code>handle()</code> or <code>__invoke()</code> method contains all relevant logic.</li><li><strong>Precise Dependency Management:</strong> Only dependencies needed for that <em>specific action</em> are injected, leading to cleaner constructors and more efficient resource usage.</li><li><strong>Reduced Cognitive Load:</strong> Developers can focus entirely on the task of a single endpoint without the mental overhead of unrelated actions in the same file.</li></ol><h2 id=the-importance-of-psr-standards-for-single-action-handles>The Importance of PSR Standards For single Action Handles</h2><p>Understanding PSR (PHP Standard Recommendations) is crucial for appreciating the full benefits of modern PHP development and patterns like PSR-15 Request Handlers. PSRs are specifications published by the PHP Framework Interop Group (PHP-FIG), comprised of members from various major PHP projects. Their goal is to promote <strong>interoperability</strong> and <strong>standardization</strong> across the PHP ecosystem.</p><p><strong>Key PSRs for Web Development:</strong></p><ul><li><strong>PSR-7 (HTTP Message Interfaces):</strong> Defines standard interfaces for HTTP request (<code>RequestInterface</code>, <code>ServerRequestInterface</code>) and response (<code>ResponseInterface</code>) objects, along with related objects like URIs and streams. A key feature is <strong>immutability</strong>, which prevents unexpected side effects when messages are passed through multiple layers (like middleware).</li><li><strong>PSR-15 (HTTP Server Request Handlers & Middleware):</strong> Builds upon PSR-7.<ul><li><code>RequestHandlerInterface</code>: Defines a standard way to process a PSR-7 request and return a PSR-7 response (our Single Action Handler!).</li><li><code>MiddlewareInterface</code>: Defines a standard interface for middleware components that process requests <em>before</em> or <em>after</em> a handler (or other middleware).</li></ul></li></ul><p><strong>Why Adhering to PSR Standards (like PSR-7/15) is a Good Idea:</strong></p><ol><li><strong>Interoperability:</strong> This is the primary driver. Code written against PSR interfaces (handlers, middleware, HTTP clients, factories) can often be used across different frameworks and libraries that also adhere to those standards. You can mix and match components from different vendors.</li><li><strong>Reduced Vendor Lock-In:</strong> By relying on community standards rather than framework-specific abstractions for core functionalities like HTTP handling, your application becomes less tied to a single framework&rsquo;s ecosystem, making future migrations or integrations potentially easier.</li><li><strong>Reusability:</strong> Logic encapsulated in PSR-15 handlers or middleware can be more easily reused across different projects, even if those projects use different underlying frameworks (provided they support PSR-15).</li><li><strong>Consistency & Predictability:</strong> Standard interfaces mean developers encounter familiar patterns across different projects and libraries. This reduces the learning curve and makes codebases easier to understand and contribute to.</li><li><strong>Modern Best Practices:</strong> PSR-7&rsquo;s immutability and PSR-15&rsquo;s clear definition of middleware and handlers encourage decoupled, layered application design, which is widely considered a best practice for building robust web applications.</li><li><strong>Future-Proofing:</strong> Basing core application logic on community-agreed standards makes it less vulnerable to breaking changes within a specific framework&rsquo;s internal abstractions.</li><li><strong>Easier Package Development:</strong> If you&rsquo;re creating reusable packages (e.g., authentication middleware, API validation logic), targeting PSR interfaces makes them instantly usable in a much wider range of applications.</li></ol><p><strong>Relevance to Handlers:</strong> Using PSR-15 <code>RequestHandlerInterface</code> directly ties your core request-handling logic to these community standards, unlocking the benefits of interoperability, reusability, and consistency. Frameworks that embrace these standards natively often provide a smoother path to achieving these advantages.</p><h2 id=implementation-across-frameworks>Implementation Across Frameworks</h2><p>Frameworks vary in their native support for PSR-15 handlers.</p><ul><li><strong>PSR-15 Native Frameworks (e.g., Mezzio):</strong> Use PSR-15 handlers as the fundamental way to process requests.</li><li><strong>Full-Stack Frameworks (e.g., Symfony, Laravel):</strong> Primarily use their own abstractions but provide mechanisms (bridges, extension points) to integrate PSR-15 handlers, requiring varying levels of effort.</li></ul><h3 id=1-middleware-frameworks-psr-15-native---mezzio-example>1. Middleware Frameworks (PSR-15 Native - Mezzio Example)</h3><p>Frameworks like Mezzio (formerly Zend Expressive) are built <em>from the ground up</em> around PSR-7 and PSR-15. Using single-action <code>RequestHandlerInterface</code> implementations is the standard, idiomatic way.</p><ul><li><strong>Core Concept:</strong> Requests flow through a PSR-15 middleware pipeline, ending at a route-specific <code>RequestHandlerInterface</code>.</li><li><strong>Example Implementation (Mezzio):</strong><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=o>&lt;?</span><span class=nx>php</span>
+</span></span><span class=line><span class=cl><span class=c1>// src/App/Handler/GetUserHandler.php
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>declare</span><span class=p>(</span><span class=nx>strict_types</span><span class=o>=</span><span class=mi>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>namespace</span> <span class=nx>App\Handler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>App\Repository\UserRepositoryInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Laminas\Diactoros\Response\JsonResponse</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Psr\Http\Message\ResponseInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Psr\Http\Message\ServerRequestInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Psr\Http\Server\RequestHandlerInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>GetUserHandler</span> <span class=k>implements</span> <span class=nx>RequestHandlerInterface</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>UserRepositoryInterface</span> <span class=nv>$userRepository</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__construct</span><span class=p>(</span><span class=nx>UserRepositoryInterface</span> <span class=nv>$userRepository</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>userRepository</span> <span class=o>=</span> <span class=nv>$userRepository</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=nf>handle</span><span class=p>(</span><span class=nx>ServerRequestInterface</span> <span class=nv>$request</span><span class=p>)</span><span class=o>:</span> <span class=nx>ResponseInterface</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Get route parameter (assuming router middleware added it as attribute)
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$userId</span> <span class=o>=</span> <span class=p>(</span><span class=nx>int</span><span class=p>)</span> <span class=nv>$request</span><span class=o>-&gt;</span><span class=na>getAttribute</span><span class=p>(</span><span class=s1>&#39;id&#39;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=nv>$user</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>userRepository</span><span class=o>-&gt;</span><span class=na>findById</span><span class=p>(</span><span class=nv>$userId</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=nv>$user</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span> <span class=k>new</span> <span class=nx>JsonResponse</span><span class=p>([</span><span class=s1>&#39;error&#39;</span> <span class=o>=&gt;</span> <span class=s1>&#39;User not found&#39;</span><span class=p>],</span> <span class=mi>404</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Assuming User object has a suitable method for array conversion
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>return</span> <span class=k>new</span> <span class=nx>JsonResponse</span><span class=p>(</span><span class=nv>$user</span><span class=o>-&gt;</span><span class=na>toArray</span><span class=p>());</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><em>Routing (e.g., in <code>config/routes.php</code>)</em><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=nv>$app</span><span class=o>-&gt;</span><span class=na>get</span><span class=p>(</span><span class=s1>&#39;/api/users/{id:\d+}&#39;</span><span class=p>,</span> <span class=nx>App\Handler\GetUserHandler</span><span class=o>::</span><span class=na>class</span><span class=p>,</span> <span class=s1>&#39;api.user.get&#39;</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div></li><li><strong>Pros (Mezzio/PSR-15 Native):</strong><ul><li><strong>Pure PSR Adherence:</strong> Natively uses PSR-7/15, maximizing interoperability and benefits of the standards. No bridging needed for core HTTP handling.</li><li><strong>Minimalism & Performance:</strong> Very lean core, potentially high performance.</li><li><strong>Maximum Flexibility & Decoupling:</strong> Full control over components; promotes decoupled design.</li></ul></li><li><strong>Cons (Mezzio/PSR-15 Native):</strong><ul><li><strong>More Initial Setup:</strong> Requires assembling the application stack (router, container, ORM, etc.).</li><li><strong>Smaller Framework-Specific Ecosystem:</strong> Fewer Mezzio-specific bundles compared to Symfony/Laravel (though any standard PHP/PSR package works).</li></ul></li></ul><h3 id=2-symfony-achieving-psr-15-compliance>2. Symfony: Achieving PSR-15 Compliance</h3><p>Symfony is highly flexible and <em>can</em> work cleanly with PSR-15 handlers, though its core uses <code>HttpFoundation</code>.</p><ul><li><strong>Option 1: Adapter Pattern (The Basic Approach)</strong><ul><li><strong>Concept:</strong> Create a standard Symfony controller (<code>__invoke</code>) that acts as a bridge. It receives the <code>HttpFoundation\Request</code>, converts it to PSR-7 <code>ServerRequestInterface</code> (using <code>symfony/psr-http-message-bridge</code>), calls your actual <code>RequestHandlerInterface</code>, converts the PSR-7 <code>ResponseInterface</code> back to <code>HttpFoundation\Response</code>, and returns it.</li><li><strong>Pros:</strong> Explicit, relatively easy to understand for a single handler.</li><li><strong>Cons:</strong> <strong>Significant boilerplate</strong> - requires one adapter class per PSR-15 handler. Feels cumbersome.</li><li><strong>Example:</strong></li></ul></li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=o>&lt;?</span><span class=nx>php</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>namespace</span> <span class=nx>App\Controller\Api\Orders</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>App\Handler\ProcessOrderHandler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Symfony\Component\HttpFoundation\Request</span><span class=p>;</span> <span class=c1>// Symfony Request
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>use</span> <span class=nx>Symfony\Component\HttpFoundation\Response</span><span class=p>;</span> <span class=c1>// Symfony Response
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>use</span> <span class=nx>Symfony\Component\Routing\Annotation\Route</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>ProcessOrderAdapterAction</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>HttpMessageFactoryInterface</span> <span class=nv>$psrHttpFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>HttpFoundationFactoryInterface</span> <span class=nv>$httpFoundationFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>ProcessOrderHandler</span> <span class=nv>$handler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__construct</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=nx>HttpMessageFactoryInterface</span> <span class=nv>$psrHttpFactory</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=nx>HttpFoundationFactoryInterface</span> <span class=nv>$httpFoundationFactory</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=nx>ProcessOrderHandler</span> <span class=nv>$handler</span> <span class=c1>// Autowired by Symfony DI
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>psrHttpFactory</span> <span class=o>=</span> <span class=nv>$psrHttpFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>httpFoundationFactory</span> <span class=o>=</span> <span class=nv>$httpFoundationFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>handler</span> <span class=o>=</span> <span class=nv>$handler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>#[Route(&#39;/api/orders&#39;, name: &#39;api_order_process&#39;, methods: [&#39;POST&#39;])]
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__invoke</span><span class=p>(</span><span class=nx>Request</span> <span class=nv>$request</span><span class=p>)</span><span class=o>:</span> <span class=nx>Response</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 1. Convert Symfony Request -&gt; PSR-7 Request
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psrRequest</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>psrHttpFactory</span><span class=o>-&gt;</span><span class=na>createRequest</span><span class=p>(</span><span class=nv>$request</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 2. Call the actual PSR-15 Handler
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psrResponse</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>handler</span><span class=o>-&gt;</span><span class=na>handle</span><span class=p>(</span><span class=nv>$psrRequest</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 3. Convert PSR-7 Response -&gt; Symfony Response
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$response</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>httpFoundationFactory</span><span class=o>-&gt;</span><span class=na>createResponse</span><span class=p>(</span><span class=nv>$psrResponse</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 4. Return Symfony Response
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>return</span> <span class=nv>$response</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><p><strong>Option 2: Centralized Listener (The Cleaner Approach)</strong></p><ul><li><strong>Concept:</strong> Leverage Symfony&rsquo;s Kernel Events. Create an Event Listener for the <code>kernel.controller</code> event. This listener checks if the controller resolved by the router implements <code>RequestHandlerInterface</code>. If it does, the listener takes over: it uses the PSR-7 bridge to convert the request, executes the handler&rsquo;s <code>handle</code> method, converts the response back, and sets it directly on the event (<code>$event->setResponse()</code>), bypassing Symfony&rsquo;s standard controller execution.</li><li><strong>Detailed Steps:</strong><ol><li>Install bridge: <code>composer require symfony/psr-http-message-bridge nyholm/psr7</code> (Nyholm is a popular PSR-7 implementation).</li><li>Create your PSR-15 handler class (implementing <code>RequestHandlerInterface</code>). Ensure it&rsquo;s registered as a service.</li><li>Create an Event Listener class implementing <code>EventSubscriberInterface</code> or listening to <code>KernelEvents::CONTROLLER</code>.</li><li>Inject <code>HttpMessageFactoryInterface</code> and <code>HttpFoundationFactoryInterface</code> (from the bridge) into the listener.</li><li>In the listener method:<ul><li>Get controller from <code>$event->getController()</code>. Check if it implements <code>RequestHandlerInterface</code>.</li><li>If yes: Convert <code>$event->getRequest()</code> -> PSR-7 Request.</li><li>Call <code>$controller->handle($psr7Request)</code>.</li><li>Convert PSR-7 Response -> Symfony Response.</li><li>Call <code>$event->setResponse($symfonyResponse)</code>.</li></ul></li><li>Register the listener with appropriate priority.</li><li>Route directly to the service ID or FQCN of your PSR-15 handler class.</li></ol></li><li><strong>Pros:</strong> <strong>Eliminates adapter boilerplate.</strong> Centralizes bridging logic. Allows clean routing directly to PSR-15 handlers. Promotes PSR standard usage cleanly within Symfony.</li><li><strong>Cons:</strong> Requires deeper understanding of Symfony&rsquo;s Kernel Events. The listener becomes a critical piece of infrastructure that needs careful testing.</li></ul></li><li><p><strong>Overall Symfony & PSR:</strong> Symfony offers excellent tools and flexibility (<code>psr-http-message-bridge</code>, Kernel Events) to achieve clean PSR-15 integration via the listener approach. While not PSR-native at its core HTTP layer, its robust component system and extensibility make it a strong choice for developers wanting a full-stack framework that respects and facilitates PSR standard adherence.</p></li></ul><h3 id=3-laravel-achieving-psr-15-compliance>3. Laravel: Achieving PSR-15 Compliance</h3><p>Laravel prioritizes developer experience and convention. While it uses HttpFoundation internally and doesn&rsquo;t natively execute PSR-15 handlers, integration is possible.</p><ul><li><strong>Option 1: Adapter Pattern (The Basic Approach)</strong><ul><li><strong>Concept:</strong> Similar to Symfony&rsquo;s adapter - create an invokable Laravel controller (<code>__invoke</code>) that uses the PSR-7 bridge (included via dependencies) to convert the <code>Illuminate\Http\Request</code>, call the PSR-15 handler, and convert the PSR-7 response back to a Laravel-compatible response. Requires PSR-7 implementation like Nyholm and manual factory setup.</li><li><strong>Pros:</strong> Explicit.</li><li><strong>Cons:</strong> <strong>Significant boilerplate</strong> per handler. Feels unnatural in the Laravel ecosystem.</li><li><strong>Example:</strong></li></ul></li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=o>&lt;?</span><span class=nx>php</span>
+</span></span><span class=line><span class=cl><span class=k>namespace</span> <span class=nx>App\Http\Controllers\Api\Order</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>App\Handler\ProcessOrderHandler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Illuminate\Http\Request</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Psr\Http\Message\ResponseInterface</span> <span class=k>as</span> <span class=nx>PsrResponseInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Psr\Http\Message\ServerRequestInterface</span> <span class=k>as</span> <span class=nx>PsrServerRequestInterface</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>use</span> <span class=nx>Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=c1>// Use appropriate factories - Laravel includes the bridge, but you might need to wire factories
+</span></span></span><span class=line><span class=cl><span class=c1>// Usually requires Nyholm PSR-7 implementation `composer require nyholm/psr7`
+</span></span></span><span class=line><span class=cl><span class=c1>// and `composer require symfony/psr-http-message-bridge`
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>ProcessOrderAdapterController</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>ProcessOrderHandler</span> <span class=nv>$handler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>PsrHttpFactory</span> <span class=nv>$psrHttpFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=nx>HttpFoundationFactory</span> <span class=nv>$httpFoundationFactory</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__construct</span><span class=p>(</span><span class=nx>ProcessOrderHandler</span> <span class=nv>$handler</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>handler</span> <span class=o>=</span> <span class=nv>$handler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Manually create factories or inject them if configured in service container
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=c1>// Requires PSR-7 implementation (like Nyholm) to be available
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psr17Factory</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>\Nyholm\Psr7\Factory\Psr17Factory</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>psrHttpFactory</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>PsrHttpFactory</span><span class=p>(</span><span class=nv>$psr17Factory</span><span class=p>,</span> <span class=nv>$psr17Factory</span><span class=p>,</span> <span class=nv>$psr17Factory</span><span class=p>,</span> <span class=nv>$psr17Factory</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>httpFoundationFactory</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>HttpFoundationFactory</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=sd>/**
+</span></span></span><span class=line><span class=cl><span class=sd>     * Handle the incoming request.
+</span></span></span><span class=line><span class=cl><span class=sd>     */</span>
+</span></span><span class=line><span class=cl>    <span class=k>public</span> <span class=k>function</span> <span class=fm>__invoke</span><span class=p>(</span><span class=nx>Request</span> <span class=nv>$request</span><span class=p>)</span> <span class=c1>// Receives Laravel Request
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 1. Convert Laravel Request -&gt; PSR-7 Request
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psrRequest</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>psrHttpFactory</span><span class=o>-&gt;</span><span class=na>createRequest</span><span class=p>(</span><span class=nv>$request</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 2. Call the actual PSR-15 Handler
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psrResponse</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>handler</span><span class=o>-&gt;</span><span class=na>handle</span><span class=p>(</span><span class=nv>$psrRequest</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 3. Convert PSR-7 Response -&gt; Symfony/Laravel Response
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$response</span> <span class=o>=</span> <span class=nv>$this</span><span class=o>-&gt;</span><span class=na>httpFoundationFactory</span><span class=o>-&gt;</span><span class=na>createResponse</span><span class=p>(</span><span class=nv>$psrResponse</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 4. Return Laravel compatible Response
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>return</span> <span class=nv>$response</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><strong>Option 2: Centralized Middleware (The Cleaner Approach)</strong><ul><li><strong>Concept:</strong> Create a custom Laravel Middleware. This middleware checks if the controller class resolved by the router for the current route implements <code>RequestHandlerInterface</code>. If it does, the middleware takes over: it instantiates the handler (via container), performs the Request/Response bridging using PSR-7 factories, executes the handler&rsquo;s <code>handle</code> method, and returns the converted response directly, bypassing Laravel&rsquo;s standard controller dispatch (<code>$next($request)</code> is skipped).</li><li><strong>Detailed Steps:</strong><ol><li>Install PSR-7 implementation: <code>composer require nyholm/psr7</code>. Ensure bridge is available (usually is).</li><li>Create your PSR-15 handler class.</li><li>Create a Middleware class (e.g., <code>HandlePsr15Requests</code>).</li><li>Inject or create PSR-7 bridge factories within the middleware.</li><li>In the <code>handle($request, Closure $next)</code> method:<ul><li>Inspect <code>$request->route()->getController()</code> or <code>$request->route()->getActionName()</code> to find the target handler class.</li><li>Use Reflection or the container to check if it implements <code>RequestHandlerInterface</code>.</li><li>If yes: Instantiate handler via <code>app()->make()</code>. Convert <code>Illuminate\Http\Request</code> -> PSR-7 Request. Call <code>handle()</code>. Convert PSR-7 Response -> Laravel Response. <code>return $laravelResponse;</code></li><li>If no: <code>return $next($request);</code></li></ul></li><li>Register the middleware globally or in a specific route group (e.g., <code>api</code>) in <code>app/Http/Kernel.php</code>.</li><li>Route directly to the FQCN of your PSR-15 handler class.</li></ol></li><li><strong>Pros:</strong> <strong>Eliminates adapter boilerplate.</strong> Centralizes bridging logic. Allows routing directly to PSR-15 handlers.</li><li><strong>Cons:</strong> Middleware becomes complex and critical. Requires careful handling of route information and potential pipeline order issues. Setting up PSR-7 factories might need a Service Provider. Works slightly &ldquo;against the grain&rdquo; of Laravel&rsquo;s typical controller flow.</li><li><strong>Example:</strong></li></ul></li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-php data-lang=php><span class=line><span class=cl><span class=k>public</span> <span class=k>function</span> <span class=nf>handle</span><span class=p>(</span><span class=nx>Request</span> <span class=nv>$request</span><span class=p>,</span> <span class=nx>Closure</span> <span class=nv>$next</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$route</span> <span class=o>=</span> <span class=nv>$request</span><span class=o>-&gt;</span><span class=na>route</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$controllerAction</span> <span class=o>=</span> <span class=nv>$route</span><span class=o>-&gt;</span><span class=na>getActionName</span><span class=p>();</span> <span class=c1>// Might be &#39;ClassName&#39; or &#39;ClassName@method&#39;
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Need a reliable way to get the target class name.
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=c1>// $controllerAction could be &#39;App\Handler\MyPsr15Handler&#39; if routed directly to class
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=c1>// Or sometimes it might be complex, need robust parsing if method is involved.
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=c1>// Let&#39;s assume direct class routing:
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nv>$controllerClass</span> <span class=o>=</span> <span class=nx>is_string</span><span class=p>(</span><span class=nv>$controllerAction</span><span class=p>)</span> <span class=o>&amp;&amp;</span> <span class=nx>class_exists</span><span class=p>(</span><span class=nv>$controllerAction</span><span class=p>)</span> <span class=o>?</span> <span class=nv>$controllerAction</span> <span class=o>:</span> <span class=k>null</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Check if the resolved class exists and implements the interface
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=nv>$controllerClass</span> <span class=o>&amp;&amp;</span> <span class=p>(</span><span class=k>new</span> <span class=nx>\ReflectionClass</span><span class=p>(</span><span class=nv>$controllerClass</span><span class=p>))</span><span class=o>-&gt;</span><span class=na>implementsInterface</span><span class=p>(</span><span class=nx>\Psr\Http\Server\RequestHandlerInterface</span><span class=o>::</span><span class=na>class</span><span class=p>))</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Instantiate the handler via the container to resolve dependencies
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psr15Handler</span> <span class=o>=</span> <span class=nx>app</span><span class=p>()</span><span class=o>-&gt;</span><span class=na>make</span><span class=p>(</span><span class=nv>$controllerClass</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Get bridge factories (configure in a Service Provider or create manually)
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=c1>// Requires PSR-7 Implementation (e.g., composer require nyholm/psr7)
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psr17Factory</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>\Nyholm\Psr7\Factory\Psr17Factory</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$psrHttpFactory</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>\Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory</span><span class=p>(</span><span class=nv>$psr17Factory</span><span class=p>,</span> <span class=nv>$psr17Factory</span><span class=p>,</span> <span class=nv>$psr17Factory</span><span class=p>,</span> <span class=nv>$psr17Factory</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=nv>$httpFoundationFactory</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>\Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Convert Laravel Request -&gt; PSR-7 Request
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psrRequest</span> <span class=o>=</span> <span class=nv>$psrHttpFactory</span><span class=o>-&gt;</span><span class=na>createRequest</span><span class=p>(</span><span class=nv>$request</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Execute the PSR-15 Handler
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$psrResponse</span> <span class=o>=</span> <span class=nv>$psr15Handler</span><span class=o>-&gt;</span><span class=na>handle</span><span class=p>(</span><span class=nv>$psrRequest</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Convert PSR-7 Response -&gt; Laravel Response
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=nv>$response</span> <span class=o>=</span> <span class=nv>$httpFoundationFactory</span><span class=o>-&gt;</span><span class=na>createResponse</span><span class=p>(</span><span class=nv>$psrResponse</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Return the response *directly*, bypassing $next() and standard controller dispatch
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>return</span> <span class=nv>$response</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// If not a PSR-15 handler route, proceed normally
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>return</span> <span class=nv>$next</span><span class=p>(</span><span class=nv>$request</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ul><li><strong>Overall Laravel & PSR:</strong> Laravel <em>can</em> be made to work with PSR-15 handlers via middleware, significantly cleaning up the adapter approach. However, compared to Symfony&rsquo;s kernel events or Mezzio&rsquo;s native support, it feels less integrated. Laravel&rsquo;s strength lies in its opinionated, rapid development workflow using its native components (Eloquent, Blade, Facades). Pushing for strict PSR-15 handler compliance requires bypassing some of that core flow.</li></ul><h2 id=general-pros-and-cons-of-the-single-action-handler-pattern-summary>General Pros and Cons of the Single Action Handler Pattern (Summary)</h2><p><strong>Pros:</strong> SRP, Testability, Organization, Readability, Precise Dependencies.
+<strong>Cons:</strong> Potentially more files, requires conscious architectural choice.</p><h2 id=when-to-use-this-pattern>When to Use This Pattern</h2><ul><li>API endpoints.</li><li>Single, distinct web actions (form processing, etc.).</li><li>When controller actions become complex.</li><li>To enforce SRP and improve testability.</li><li>As the default in PSR-15 native frameworks.</li></ul><h2 id=conclusion--framework-choice-considerations>Conclusion & Framework Choice Considerations</h2><p>The Single Action Handler pattern, especially when implemented using the PSR-15 <code>RequestHandlerInterface</code>, represents a powerful approach for building modern, maintainable, and testable PHP applications. Adhering to PSR standards like PSR-7 and PSR-15 brings significant benefits in interoperability, reusability, and future-proofing your codebase.</p><p>When choosing a framework with PSR adherence in mind:</p><ul><li><strong>For Native PSR-15/7 Experience:</strong> If maximizing interoperability and working directly with PSR standards at the core HTTP layer is your highest priority, a <strong>middleware-centric framework like Mezzio</strong> is designed specifically for this. It offers the cleanest, most direct path to leveraging PSR-7/15.</li><li><strong>For Full-Stack Power with PSR Flexibility:</strong> If you require a comprehensive framework with a vast ecosystem, but still want the ability to cleanly integrate and prioritize PSR-15 handlers, <strong>Symfony</strong> provides excellent flexibility. Its robust DI container, component system, and kernel events (allowing the centralized listener approach) make it a strong contender for building large applications that adhere well to PSR standards with reasonable effort.</li><li><strong>For Rapid Development & DX Prioritizing Framework Conventions:</strong> If top development speed, an integrated ecosystem, and convention over configuration are paramount, <strong>Laravel</strong> excels. While achieving strict PSR-15 handler compliance requires more deliberate effort (via the centralized middleware approach, working slightly against the native flow), it&rsquo;s possible. However, the main draw of Laravel often lies in embracing <em>its</em> way of doing things.</li></ul></section><footer class=article-footer><section class=article-tags><a href=/tags/php/>PHP</a>
+<a href=/tags/psr/>PSR</a>
+<a href=/tags/laravel/>Laravel</a>
+<a href=/tags/symfony/>Symfony</a>
+<a href=/tags/mezzio/>Mezzio</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section><section class=article-lastmod><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<span>Last updated on Apr 14, 2025 00:00 UTC</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/php-static-analysis-vs-native-statically-typed-languages/><div class=article-details><h2 class=article-title>PHP + Static Analysis vs. Native Statically Typed Languages</h2></div></a></article><article><a href=/p/swoole-undocumented-features-pt1/><div class=article-details><h2 class=article-title>Swoole undocumented features pt.1</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2025 Ilyas Deckers Blog</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

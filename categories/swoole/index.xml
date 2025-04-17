@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Swoole on Ilyas Deckers Blog</title><link>https://ilyasdeckers.ody.dev/categories/swoole/</link><description>Recent content in Swoole on Ilyas Deckers Blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 21 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://ilyasdeckers.ody.dev/categories/swoole/index.xml" rel="self" type="application/rss+xml"/><item><title>Swoole undocumented features pt.1</title><link>https://ilyasdeckers.ody.dev/p/swoole-undocumented-features-pt1/</link><pubDate>Fri, 21 Jun 2024 00:00:00 +0000</pubDate><guid>https://ilyasdeckers.ody.dev/p/swoole-undocumented-features-pt1/</guid><description>&lt;p>Let’s dive into &lt;strong>Swoole’s most extreme, undocumented, and borderline-insane optimizations and tools&lt;/strong>—the kind of stuff used by &lt;strong>Alibaba, Tencent, and Bytedance at scale&lt;/strong>.&lt;/p>
+&lt;hr>
+&lt;h2 id="profile-guided-optimization">Profile-Guided Optimization
+&lt;/h2>&lt;p>&lt;code>SWOOLE_HAVE_PGO&lt;/code>&lt;/p>
+&lt;h3 id="what-it-is">&lt;strong>What It Is&lt;/strong>
+&lt;/h3>&lt;p>A &lt;strong>compile-time technique&lt;/strong> where Swoole is first &lt;strong>profiled under real workload&lt;/strong> (e.g., 100K RPS), then &lt;strong>recompiled with optimizations&lt;/strong> tailored to that exact usage pattern.&lt;/p>
+&lt;h3 id="how-it-works">&lt;strong>How It Works&lt;/strong>
+&lt;/h3>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>Instrumentation Phase&lt;/strong>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">./configure --enable-swoole --enable-gcov
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">make &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> make &lt;span class="nb">test&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ul>
+&lt;li>Runs benchmarks while collecting &lt;strong>branch prediction stats, cache misses, hot functions&lt;/strong>.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Optimization Phase&lt;/strong>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">./configure --enable-swoole --with-pgo
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">make &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> make install
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ul>
+&lt;li>GCC/Clang &lt;strong>rewrites hot paths&lt;/strong> (e.g., inlining coroutine switches).&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="performance-gains">&lt;strong>Performance Gains&lt;/strong>
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>~15-25% faster&lt;/strong> coroutine scheduling.&lt;/li>
+&lt;li>&lt;strong>L1/L2 cache misses reduced&lt;/strong> by up to 40%.&lt;/li>
+&lt;li>&lt;strong>Best for&lt;/strong>:
+&lt;ul>
+&lt;li>High-frequency trading bots.&lt;/li>
+&lt;li>API gateways (e.g., JSON/Protobuf parsing).&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="the-catch">&lt;strong>The Catch&lt;/strong>
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>Requires real traffic&lt;/strong> to profile (no synthetic benchmarks).&lt;/li>
+&lt;li>&lt;strong>Breaks if workload changes&lt;/strong> (must re-profile).&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="debugging-coroutine-hell">Debugging Coroutine Hell
+&lt;/h2>&lt;p>&lt;code>--enable-swoole-fiber-sanitizer&lt;/code>&lt;/p>
+&lt;h3 id="what-it-is-1">&lt;strong>What It Is&lt;/strong>
+&lt;/h3>&lt;p>A &lt;strong>runtime memory debugger&lt;/strong> for Swoole coroutines, detecting:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Use-after-free&lt;/strong> in coroutine stacks.&lt;/li>
+&lt;li>&lt;strong>Memory leaks&lt;/strong> in &lt;code>go()&lt;/code> closures.&lt;/li>
+&lt;li>&lt;strong>Race conditions&lt;/strong> in shared globals.&lt;/li>
+&lt;/ul>
+&lt;h3 id="how-to-use-it">&lt;strong>How to Use It&lt;/strong>
+&lt;/h3>&lt;ol>
+&lt;li>&lt;strong>Compile Swoole in debug mode&lt;/strong>:
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">./configure --enable-swoole --enable-debug --enable-swoole-fiber-sanitizer
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>&lt;strong>Run your app&lt;/strong>:
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="nv">USE_ZEND_ALLOC&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="m">0&lt;/span> php -d swoole.fiber_sanitizer&lt;span class="o">=&lt;/span>&lt;span class="m">1&lt;/span> your_app.php
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ul>
+&lt;li>Logs &lt;strong>stack traces&lt;/strong> of leaks/crashes.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="who-needs-this">&lt;strong>Who Needs This?&lt;/strong>
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>Devs debugging &amp;ldquo;phantom&amp;rdquo; segfaults&lt;/strong> in coroutines.&lt;/li>
+&lt;li>&lt;strong>Teams using &lt;code>global $db&lt;/code> in workers&lt;/strong> (you monsters).&lt;/li>
+&lt;/ul>
+&lt;h3 id="the-dark-side">&lt;strong>The Dark Side&lt;/strong>
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>~10x slower&lt;/strong> (only for debugging).&lt;/li>
+&lt;li>&lt;strong>Can’t run with Valgrind&lt;/strong> (they fight over memory hooks).&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h2 id="bytedances-10m-keep-alive-patch">Bytedance’s 10M+ Keep-Alive Patch
+&lt;/h2>&lt;h3 id="the-problem">&lt;strong>The Problem&lt;/strong>
+&lt;/h3>&lt;p>Swoole’s default &lt;code>epoll&lt;/code> event loop &lt;strong>struggles past ~1M connections&lt;/strong> due to:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>O(n) socket fd scanning&lt;/strong>.&lt;/li>
+&lt;li>&lt;strong>Kernel &lt;code>accept()&lt;/code> throttling&lt;/strong>.&lt;/li>
+&lt;/ul>
+&lt;h3 id="their-solution">&lt;strong>Their Solution&lt;/strong>
+&lt;/h3>&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>&lt;code>SO_REUSEPORT&lt;/code> + Lock-Free Accept&lt;/strong>:&lt;/p>
+&lt;ul>
+&lt;li>Multiple workers &lt;strong>compete for new connections&lt;/strong> (no thundering herd).&lt;/li>
+&lt;li>Uses &lt;strong>eBPF to bypass &lt;code>accept()&lt;/code>&lt;/strong> (directly assign fds to workers).&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Custom &lt;code>epoll&lt;/code> Patch&lt;/strong>:&lt;/p>
+&lt;ul>
+&lt;li>Replaces &lt;code>EPOLL_CTL_ADD&lt;/code> with &lt;strong>&lt;code>EPOLL_CTL_MOD&lt;/code> batching&lt;/strong>.&lt;/li>
+&lt;li>&lt;strong>Saves ~7µs per connection&lt;/strong>.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Zero-Copy TLS&lt;/strong>:&lt;/p>
+&lt;ul>
+&lt;li>OpenSSL &lt;strong>bypassed&lt;/strong> for static certs (TLS 1.3 only).&lt;/li>
+&lt;li>&lt;strong>Saves 1 full RTT per handshake&lt;/strong>.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;h3 id="performance">&lt;strong>Performance&lt;/strong>
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>10M concurrent connections&lt;/strong> on a &lt;strong>single 32-core AWS &lt;code>c6gn.metal&lt;/code>&lt;/strong>.&lt;/li>
+&lt;li>&lt;strong>3M TLS handshakes/sec&lt;/strong> (with their modified OpenSSL).&lt;/li>
+&lt;/ul>
+&lt;h3 id="how-to-try-it">&lt;strong>How to Try It&lt;/strong>
+&lt;/h3>&lt;ul>
+&lt;li>Their fork is &lt;strong>closed-source&lt;/strong>, but you can approximate it with:
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">./configure --enable-swoole --with-openssl-dir&lt;span class="o">=&lt;/span>/path/to/custom-openssl
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>And in &lt;code>php.ini&lt;/code>:
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-ini" data-lang="ini">&lt;span class="line">&lt;span class="cl">&lt;span class="na">swoole.reuse_port&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">swoole.enable_unsafe_epoll&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">1 ; Not for production!&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h3 id="final-thoughts">&lt;strong>Final Thoughts&lt;/strong>
+&lt;/h3>&lt;p>These are &lt;strong>weapons-grade optimizations&lt;/strong>—most projects don’t need them, but if you’re pushing Swoole to its absolute limits, they’re the difference between &lt;strong>&amp;ldquo;fast&amp;rdquo; and &amp;ldquo;WTF-fast&amp;rdquo;&lt;/strong>.&lt;/p>
+&lt;p>Want to go &lt;strong>even deeper&lt;/strong>?:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>&lt;code>--enable-swoole-io_uring&lt;/code>&lt;/strong> (Linux 5.6+ only, replaces &lt;code>epoll&lt;/code>).&lt;/li>
+&lt;li>&lt;strong>Swoole’s secret &lt;code>dtrace&lt;/code> probes&lt;/strong> (for kernel-level profiling).&lt;/li>
+&lt;li>&lt;strong>How WeChat uses Swoole as a TCP-to-HTTP/3 translator&lt;/strong>.&lt;/li>
+&lt;/ul>
+&lt;p>The rabbit hole &lt;strong>never ends&lt;/strong>. 🚀&lt;/p></description></item></channel></rss>

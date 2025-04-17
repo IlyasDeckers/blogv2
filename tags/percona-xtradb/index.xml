@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Percona XtraDB on Ilyas Deckers Blog</title><link>https://ilyasdeckers.ody.dev/tags/percona-xtradb/</link><description>Recent content in Percona XtraDB on Ilyas Deckers Blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 14 Mar 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://ilyasdeckers.ody.dev/tags/percona-xtradb/index.xml" rel="self" type="application/rss+xml"/><item><title>Build a High Available MySQL Cluster with Percona XtraDB and Ubuntu 16.04</title><link>https://ilyasdeckers.ody.dev/p/building-high-available-mysql-cluster-with-percona-xtradb/</link><pubDate>Tue, 14 Mar 2017 00:00:00 +0000</pubDate><guid>https://ilyasdeckers.ody.dev/p/building-high-available-mysql-cluster-with-percona-xtradb/</guid><description>&lt;h2 id="introduction">Introduction
+&lt;/h2>&lt;p>This tutorial will show how to install the &lt;em>Percona XtraDB Cluster&lt;/em> on three &lt;em>Ubuntu&lt;/em> 16.04 LTS servers, using the packages from the official Percona repositories. After this tutorial you should be able to install, configure and secure a high available MySQL cluster.&lt;/p>
+&lt;h2 id="prerequisites">Prerequisites
+&lt;/h2>&lt;p>To follow this tutorial you need 3 machines running Ubuntu 16.04. All machines need to be reachable over SSH and they need to be in the same network.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">node #1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: mysql01
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">IP: 10.100.0.200
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">node #2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: mysql02
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">IP:10.100.0.201
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">node #3
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">hostname: mysql03
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">IP:10.100.0.202
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="configuring-the-repositories">Configuring the repositories
+&lt;/h3>&lt;p>To install Percona XtraDB you will have to add the appropriate repositories to your servers. Run the following commands on the three nodes.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">wget https://repo.percona.com/apt/percona-release_0.1-4.&lt;span class="k">$(&lt;/span>lsb_release -sc&lt;span class="k">)&lt;/span>_all.deb
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo dpkg -i percona-release_0.1-4.&lt;span class="k">$(&lt;/span>lsb_release -sc&lt;span class="k">)&lt;/span>_all.deb
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo apt-get update
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo apt-get install percona-xtradb-cluster-57
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="configure-apparmor--selinux">Configure Apparmor &amp;amp; SElinux
+&lt;/h3>&lt;p>In order to successfully start Percona XtraDB, it is advised to disable SElinux. When SElinux is enabled the communication between nodes does not work and the nodes won&amp;rsquo;t be able to join the cluster successfully. By default SElinux is not enabled in Ubuntu, if you have installed it previously there are some options for disabling it. To test if SElinux is enabled on your system run the following command.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">selinuxenabled &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="nb">echo&lt;/span> enabled &lt;span class="o">||&lt;/span> &lt;span class="nb">echo&lt;/span> disabled
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>If SElinux is enabled you can completely remove it from your system by uninstalling it&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo apt-get remove selinux* --purge -y
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Or you can disable it by editing the config file for SElinux.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="nv">SELINUX&lt;/span>&lt;span class="o">=&lt;/span>disabled
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Percona doesn’t provide any AppArmor profile for PXC, but it seems that on this server (Ubuntu TLS), a previous version of MySQL was installed and then removed but the AppArmor profile was still present. So if you use apparmor (or if you don’t know) and you want to check is there is a profile for mysql, you can run the following command :&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">apparmor_status
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>If a mysql profile is available you can disable it like this.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>If SElinux is enabled you can completely remove it from your system by uninstalling it&lt;/p>
+&lt;blockquote>
+&lt;p>Remember to check all your nodes, it prevents a lot of issues later on.&lt;/p>&lt;/blockquote>
+&lt;h2 id="configure-your-firewall">Configure your firewall
+&lt;/h2>&lt;p>Percona XtraDB uses some ports asside from the standard 3306. You need to open these ports on your firewall for the cluster to function well.&lt;/p>
+&lt;p>&lt;strong>MySQL:&lt;/strong> 3306&lt;br>
+&lt;strong>Cluster Communication:&lt;/strong> 4567&lt;br>
+&lt;strong>SST:&lt;/strong> 4568&lt;/p>
+&lt;p>The main cluster communication happens over port 4567. You can change this by specifying this option.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">wsrep_provider_options=&amp;#34;gmcast.listen_addr=tcp://0.0.0.0:4010;&amp;#34;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="configure-the-bootstrap-node">Configure the bootstrap node
+&lt;/h2>&lt;p>Go to your first node and open /etc/mysql/my.cnf and copy the following configuration at the end of the file and change the IP&amp;rsquo;s on line 2 and 6 to your configuration.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_provider&lt;/span>&lt;span class="o">=&lt;/span>/usr/lib/libgalera_smm.so
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_cluster_address&lt;/span>&lt;span class="o">=&lt;/span>gcomm://10.100.0.200,10.100.0.201,10.100.0.203 &lt;span class="c1"># Change the IP&amp;#39;s to your IP&amp;#39;s (ip1,ip2,ip3) &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">binlog_format&lt;/span>&lt;span class="o">=&lt;/span>ROW
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">default_storage_engine&lt;/span>&lt;span class="o">=&lt;/span>InnoDB
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">innodb_autoinc_lock_mode&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">address &lt;span class="nv">wsrep_node_address&lt;/span>&lt;span class="o">=&lt;/span>10.100.0.200 &lt;span class="c1"># The IP of the node that you are configuring&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_sst_method&lt;/span>&lt;span class="o">=&lt;/span>xtrabackup-v2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_cluster_name&lt;/span>&lt;span class="o">=&lt;/span>my_mysql_cluster
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_sst_auth&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;username:password&amp;#34;&lt;/span> &lt;span class="c1"># A username and password for SST that we will configure later&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>The first node is ready to be started. Execute the following command to bootsrap the cluster.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">/etc/init.d/mysql bootstrap-pxc
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Now we have to check if the first node has started successfully.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo mysql -u root -p
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mysql &amp;gt; SHOW STATUS LIKE &lt;span class="s1">&amp;#39;wsrep%&amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+----------------------------+--------------------------------------+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Variable_name &lt;span class="p">|&lt;/span> Value &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+----------------------------+--------------------------------------+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_local_state_uuid &lt;span class="p">|&lt;/span> b598af3e-ace3-11e2-0800-3e90eb9cd5d3 &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_local_state &lt;span class="p">|&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_local_state_comment &lt;span class="p">|&lt;/span> Synced &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_cluster_size &lt;span class="p">|&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_cluster_status &lt;span class="p">|&lt;/span> Primary &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_connected &lt;span class="p">|&lt;/span> ON &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_ready &lt;span class="p">|&lt;/span> ON &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+----------------------------+--------------------------------------+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">60&lt;/span> rows in &lt;span class="nb">set&lt;/span> &lt;span class="o">(&lt;/span>0.01 sec&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>As you can see the first node started successfully and it is ready to accept other nodes to join the cluster. Now we have to configure a user to make use of State Snapshot Transfer. Change the username and password to the values you chose for wsrep_sst_auth in /etc/mysql/my.conf.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">mysql&amp;gt; CREATE USER &lt;span class="s1">&amp;#39;username&amp;#39;&lt;/span>@&lt;span class="s1">&amp;#39;localhost&amp;#39;&lt;/span> IDENTIFIED BY &lt;span class="s1">&amp;#39;password&amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mysql&amp;gt; GRANT PROCESS, RELOAD, LOCK TABLES, REPLICATION CLIENT ON &lt;span class="se">\*&lt;/span>.&lt;span class="se">\*&lt;/span> TO &lt;span class="s1">&amp;#39;username&amp;#39;&lt;/span>@&lt;span class="s1">&amp;#39;password&amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mysql&amp;gt; FLUSH PRIVILEGES&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>State Snapshot Transfer (SST) is a full data copy from one node (donor) to the joining node (joiner). It’s used when a new node joins the cluster. In order to be synchronized with the cluster, the new node has to receive data from a node that is already part of the cluster.&lt;/p>&lt;/blockquote>
+&lt;h2 id="configure-the-two-other-nodes">Configure the two other nodes
+&lt;/h2>&lt;p>Edit /etc/mysql/my.cnf on the two other nodes. Remember to change the IP of the host on line 6.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_provider&lt;/span>&lt;span class="o">=&lt;/span>/usr/lib/libgalera_smm.so
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_cluster_address&lt;/span>&lt;span class="o">=&lt;/span>gcomm://10.100.0.200,10.100.0.201,10.100.0.203 &lt;span class="c1"># Change the IP&amp;#39;s to your IP&amp;#39;s (ip1,ip2,ip3) &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">binlog&lt;span class="se">\_&lt;/span>format&lt;span class="o">=&lt;/span>ROW
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">default_storage_engine&lt;/span>&lt;span class="o">=&lt;/span>InnoDB
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">innodb_autoinc_lock_mode&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">address wsrep&lt;span class="se">\_&lt;/span>node_address&lt;span class="o">=&lt;/span>10.100.0.200 &lt;span class="c1"># The IP of the node that you are configuring&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_sst_method&lt;/span>&lt;span class="o">=&lt;/span>xtrabackup-v2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_cluster_name&lt;/span>&lt;span class="o">=&lt;/span>my_mysql_cluster
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">wsrep_sst_auth&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;username:password&amp;#34;&lt;/span> &lt;span class="c1"># The username and password for SST&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Then start MySQL on the nodes.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo service mysql start
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>If everything went right, you can check the cluster status to check if all nodes are connected and the cluster is in a good state.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo mysql -u root -p
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mysql&amp;gt; SHOW STATUS LIKE &lt;span class="s1">&amp;#39;wsrep%&amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+----------------------------+--------------------------------------+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> Variable_name &lt;span class="p">|&lt;/span> Value &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+----------------------------+--------------------------------------+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_local_state_uuid &lt;span class="p">|&lt;/span> g4fd322e-whe3-11e2-0255&lt;span class="se">\3&lt;/span>e90eb9cd5d3 &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_local_state &lt;span class="p">|&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_local_state_comment &lt;span class="p">|&lt;/span> Synced &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_cluster_size &lt;span class="p">|&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_cluster_status &lt;span class="p">|&lt;/span> Primary &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_connected &lt;span class="p">|&lt;/span> ON &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">|&lt;/span> wsrep_ready &lt;span class="p">|&lt;/span> ON &lt;span class="p">|&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+----------------------------+--------------------------------------+
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="m">40&lt;/span> rows in &lt;span class="nb">set&lt;/span> &lt;span class="o">(&lt;/span>0.01 sec&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="conclusion">Conclusion
+&lt;/h3>&lt;p>Setting up a Percona XtraDB cluster is relatively easy. There are however some things that could go wrong. 90% of the time it has something to do with SElinux. A whole other beast is when your cluster dies, there are a lot of scenario&amp;rsquo;s that could break the cluster. I will get more in depth in a later article.&lt;/p>
+&lt;blockquote>
+&lt;p>TIP: In case of any errors look for the file /var/lib/mysql/mysqlxx.err this file has saved me in a lot of situations when troubleshooting MySQL.&lt;/p>&lt;/blockquote></description></item></channel></rss>

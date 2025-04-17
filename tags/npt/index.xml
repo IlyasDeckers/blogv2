@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>NPT on Ilyas Deckers Blog</title><link>https://ilyasdeckers.ody.dev/tags/npt/</link><description>Recent content in NPT on Ilyas Deckers Blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sun, 19 Nov 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://ilyasdeckers.ody.dev/tags/npt/index.xml" rel="self" type="application/rss+xml"/><item><title>Improving KVM performance for Ryzen with the NPT patch</title><link>https://ilyasdeckers.ody.dev/p/improving-kvm-performance-for-ryzen-with-npt-patch/</link><pubDate>Sun, 19 Nov 2017 00:00:00 +0000</pubDate><guid>https://ilyasdeckers.ody.dev/p/improving-kvm-performance-for-ryzen-with-npt-patch/</guid><description>&lt;h2 id="introduction">INTRODUCTION
+&lt;/h2>&lt;p>GPU passthrough on Ryzen platform has its issues. The most common one, and the one I struggled with the most was a 10 year old bug. The one we will address today. For those who already tried GPU passthrough on ryzen with KVM, you should have noticed a serious performance drop in your guest vs running your GPU on bare metal. This issue could be adressed by using &lt;code>npt=0&lt;/code>. This brought along some other issues like not being able to use host-passthrough, the guest only detecting one core, cpu performance loss,&amp;hellip; Far from ideal. Last week &lt;a class="link" href="https://patchwork.kernel.org/patch/10027525/" target="_blank" rel="noopener"
+>Geoffrey and Paolo&lt;/a> managed to patch this bug. In this article we will be applying the patch and compiling it with the latest linux kernel. (4.14-rc8)&lt;/p>
+&lt;h2 id="getting-started">GETTING STARTED
+&lt;/h2>&lt;p>You can use almost any kernel with this patch. I have tested this with kernel 4.10, 4.13 and 4.14-rc8. In this guide, I will be using kernel 4.14-rc8. Kernel 4.14 will be released very shortly as of writing. Linus Torvalds noted that this past week of 4.14 development was fairly quiet and perhaps doesn&amp;rsquo;t need an &amp;ldquo;RC8&amp;rdquo; update, but he opted for it anyways. UPDATE: Kernel 4.14 has been released. &lt;a class="link" href="https://ilyasdeckers.be/2017/11/17/how-to-install-kernel-4-14-in-linux-ubuntu/" target="_blank" rel="noopener"
+>Click here&lt;/a> to learn how to install and update your kernel.&lt;/p>
+&lt;h3 id="getting-the-kernel">Getting the kernel
+&lt;/h3>&lt;p>First, we will get the build files for the new kernel.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">git clone git://git.launchpad.net/~ubuntu-kernel-test/ubuntu/+source/linux/+git/mainline-crack v4.14-rc8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="creating-and-applying-the-patch">Creating and applying the patch
+&lt;/h2>&lt;p>The patch can be found here: &lt;a class="link" href="https://patchwork.kernel.org/patch/10027525/" target="_blank" rel="noopener"
+>https://patchwork.kernel.org/patch/10027525/&lt;/a> or copy and paste the patch to a new file npt-ryzen.patch&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">nano npt-ryzen.patch
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">diff --git a/arch/x86/kvm/svm.c b/arch/x86/kvm/svm.c
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">index af256b786a70..af09baa3d736 &lt;span class="m">100644&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">--- a/arch/x86/kvm/svm.c
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+++ b/arch/x86/kvm/svm.c
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">@@ -3626,6 +3626,13 @@ static int svm&lt;span class="se">\_&lt;/span>set&lt;span class="se">\_&lt;/span>msr&lt;span class="o">(&lt;/span>struct kvm&lt;span class="se">\_&lt;/span>vcpu &lt;span class="se">\*&lt;/span>vcpu, struct msr&lt;span class="se">\_&lt;/span>data &lt;span class="se">\*&lt;/span>msr&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> u32 &lt;span class="nv">ecx&lt;/span> &lt;span class="o">=&lt;/span> msr-&amp;gt;index&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> u64 &lt;span class="nv">data&lt;/span> &lt;span class="o">=&lt;/span> msr-&amp;gt;data&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> switch &lt;span class="o">(&lt;/span>ecx&lt;span class="o">)&lt;/span> &lt;span class="o">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ &lt;span class="k">case&lt;/span> MSR&lt;span class="se">\_&lt;/span>IA32&lt;span class="se">\_&lt;/span>CR&lt;span class="se">\_&lt;/span>PAT:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ &lt;span class="k">if&lt;/span> &lt;span class="o">(&lt;/span>!kvm&lt;span class="se">\_&lt;/span>mtrr&lt;span class="se">\_&lt;/span>valid&lt;span class="o">(&lt;/span>vcpu, MSR&lt;span class="se">\_&lt;/span>IA32&lt;span class="se">\_&lt;/span>CR&lt;span class="se">\_&lt;/span>PAT, data&lt;span class="o">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ &lt;span class="k">return&lt;/span> 1&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ vcpu-&amp;gt;arch.pat &lt;span class="o">=&lt;/span> data&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ svm-&amp;gt;vmcb-&amp;gt;save.g&lt;span class="se">\_&lt;/span>pat &lt;span class="o">=&lt;/span> data&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ mark&lt;span class="se">\_&lt;/span>dirty&lt;span class="o">(&lt;/span>svm-&amp;gt;vmcb, VMCB&lt;span class="se">\_&lt;/span>NPT&lt;span class="o">)&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">+ break&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">case&lt;/span> MSR&lt;span class="se">\_&lt;/span>IA32&lt;span class="se">\_&lt;/span>TSC:
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> kvm&lt;span class="se">\_&lt;/span>write&lt;span class="se">\_&lt;/span>tsc&lt;span class="o">(&lt;/span>vcpu, msr&lt;span class="o">)&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> break&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Now that we have the patch we can apply it to our kernel.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">cd v4.14rc8
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">cp /boot/config-$(uname -r) .config
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">patch -p1 &amp;lt; npt-ryzen.patch
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="compiling-the-new-kernel">Compiling the new kernel
+&lt;/h2>&lt;p>If all went well, it is time to compile our new patched kernel. Remember, after compiling and installing the new kernel you will have to reboot. Execute the following commands to start compiling the kernel.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">yes &lt;span class="s1">&amp;#39;&amp;#39;&lt;/span> &lt;span class="p">|&lt;/span> make oldconfig
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">make clean
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">make -j &lt;span class="m">4&lt;/span> deb-pkg &lt;span class="nv">LOCALVERSION&lt;/span>&lt;span class="o">=&lt;/span>-with-npt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Note: this process can take up some time.&lt;/p>
+&lt;h2 id="installing-the-kernel">Installing the kernel
+&lt;/h2>&lt;p>After the compiling is done you will be left with some .deb files. These are the installation files that we need in order to install the patched kernel.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">sudo dpkg -i linux-headers-4.14.0-rc6-custom&lt;span class="se">\_&lt;/span>4.14.0-rc6-custom-1&lt;span class="se">\_&lt;/span>amd64.deb linux-image-4.14.0-rc6-custom&lt;span class="se">\_&lt;/span>4.14.0-rc6-custom-1&lt;span class="se">\_&lt;/span>amd64.deb linux-libc-dev&lt;span class="se">\_&lt;/span>4.14.0-rc6-custom-1&lt;span class="se">\_&lt;/span>amd64.deb
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>At this point you are ready to reboot your machine and your system should be ready for GPU passthrough without any performance loss on your KVM guest.&lt;/p></description></item></channel></rss>
